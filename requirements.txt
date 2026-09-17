@@ -1,0 +1,6 @@
+datasets
+huggingface_hub
+soundfile
+scipy
+torch
+transformers
