@@ -1,2 +1,8 @@
 /.venv
 /.venv310
+
+*.npy
+tamil_sample.flac
+tamil_sample.units
+tamil_sample_16k.wav
+tamil_sample_collapsed.units

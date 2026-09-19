@@ -4,3 +4,5 @@ soundfile
 scipy
 torch
 transformers
+scikit-learn
+joblib
