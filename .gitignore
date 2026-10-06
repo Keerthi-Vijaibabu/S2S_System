@@ -1,8 +1,14 @@
 /.venv
 /.venv310
+s2st_env/
 
 *.npy
 tamil_sample.flac
 tamil_sample.units
 tamil_sample_16k.wav
 tamil_sample_collapsed.units
+
+pretrained_models/
+tamil_kmeans_chunks/
+tamil_kmeans_chunks_test/
+

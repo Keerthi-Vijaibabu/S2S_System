@@ -1,8 +1,46 @@
-datasets
-huggingface_hub
-soundfile
-scipy
-torch
-transformers
-scikit-learn
-joblib
+# ============================================================
+# Unified Tamil S2ST Environment
+# K-means + model training + Unit HiFi-GAN
+# ============================================================
+
+# ---------- PyTorch / Audio ----------
+torch==2.14.0
+torchaudio==2.11.0
+torchvision==0.29.0
+torchcodec==0.16.0
+
+# ---------- Hugging Face / SSL Models ----------
+transformers==5.17.0
+datasets==5.0.1
+huggingface_hub==1.32.0
+tokenizers==0.23.2
+safetensors==0.8.0
+
+# ---------- Numerical / ML ----------
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.7.2
+pandas==2.3.3
+
+# ---------- Audio ----------
+soundfile==0.14.0
+
+# ---------- HiFi-GAN / Training ----------
+torchdtw==0.4.1
+
+# ---------- Dataset / Data Processing ----------
+pyarrow==25.0.1
+fsspec==2026.6.0
+polars==1.44.2
+tqdm==4.70.1
+
+# ---------- Utilities ----------
+PyYAML==6.0.3
+requests==2.34.2
+filelock==4.0.0
+packaging==26.3
+typing_extensions==4.16.0
+
+# ---------- Optional debugging ----------
+objprint==0.3.0
+viztracer==1.1.1
