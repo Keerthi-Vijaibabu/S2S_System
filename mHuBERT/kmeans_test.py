@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import config
+
 import numpy as np
 import torch
 import soundfile as sf
@@ -6,9 +13,15 @@ import joblib
 from transformers import AutoFeatureExtractor, AutoModel
 
 
-MODEL_NAME = "utter-project/mHuBERT-147"
-AUDIO_FILE = "tamil_sample_16k.wav"
-KMEANS_FILE = "tamil_kmeans_1000_test.joblib"
+MODEL_NAME = config.MHUBERT_MODEL
+AUDIO_FILE = config.SAMPLE_WAV_16K
+
+# Prefer the fully trained model; fall back to the small test model
+# that is checked into the repository.
+if config.KMEANS_MODEL.exists():
+    KMEANS_FILE = config.KMEANS_MODEL
+else:
+    KMEANS_FILE = config.KMEANS_TEST_MODEL
 
 
 # ------------------------------------------------
@@ -83,7 +96,7 @@ with torch.inference_mode():
     )
 
 features = (
-    outputs.hidden_states[11]
+    outputs.hidden_states[config.HIDDEN_LAYER]
     .squeeze(0)
     .cpu()
     .numpy()
@@ -165,18 +178,21 @@ for idx in order[:10]:
 # Save
 # ------------------------------------------------
 
+UNITS_FILE = config.PROJECT_ROOT / "tamil_sample.units"
+COLLAPSED_FILE = config.PROJECT_ROOT / "tamil_sample_collapsed.units"
+
 np.savetxt(
-    "tamil_sample.units",
+    UNITS_FILE,
     units,
     fmt="%d"
 )
 
 np.savetxt(
-    "tamil_sample_collapsed.units",
+    COLLAPSED_FILE,
     collapsed,
     fmt="%d"
 )
 
 print("\nSaved:")
-print("tamil_sample.units")
-print("tamil_sample_collapsed.units")
+print(UNITS_FILE)
+print(COLLAPSED_FILE)

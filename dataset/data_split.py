@@ -1,10 +1,30 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import config
+
 from datasets import load_dataset, Audio
 from collections import defaultdict
 import json
 import random
 
-SEED = 42
-MAX_SCAN = 5000   # First test with 5,000 utterances
+SEED = config.SEED
+
+# None  -> scan the entire dataset and write config.SPLIT_FILE
+# 5000  -> quick test on the first 5,000 utterances; writes
+#          indicvoices_tamil_split_5000.json instead, so the full
+#          split file is never overwritten by a test run.
+MAX_SCAN = None
+
+if MAX_SCAN is None:
+    OUTPUT_FILE = config.SPLIT_FILE
+else:
+    OUTPUT_FILE = (
+        config.PROJECT_ROOT
+        / f"indicvoices_tamil_split_{MAX_SCAN}.json"
+    )
 
 random.seed(SEED)
 
@@ -36,15 +56,21 @@ print(f"\nScanning dataset utterances...")
 
 for i, sample in enumerate(ds):
 
+    if MAX_SCAN is not None and i >= MAX_SCAN:
+        break
+
     if (i + 1) % 1000 == 0:
         print(f"Scanned {i + 1:,} utterances...")
 
     speaker_id = sample["speaker_id"]
 
     # We don't store audio bytes!
+    # The Tamil transcript is kept: later stages (data filtering,
+    # translation, auxiliary CTC loss) all need it.
     metadata = {
         "speaker_id": speaker_id,
         "duration": sample["duration"],
+        "text": sample["text"],
         "audio_path": sample["audio_filepath"]["path"],
     }
 
@@ -133,7 +159,7 @@ print("\nSpeaker-disjoint split verified!")
 # --------------------------------------------------
 
 with open(
-    "indicvoices_tamil_split_full.json",
+    OUTPUT_FILE,
     "w",
     encoding="utf-8"
 ) as f:
@@ -145,4 +171,4 @@ with open(
         indent=2
     )
 
-print("\nSaved indicvoices_tamil_split_5000.json")
+print(f"\nSaved {OUTPUT_FILE}")

@@ -14,50 +14,82 @@ from datasets import load_dataset, Audio
 from scipy.signal import resample_poly
 from transformers import AutoFeatureExtractor, AutoModel
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import config
+
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
 
-MODEL_NAME = "utter-project/mHuBERT-147"
+MODEL_NAME = config.MHUBERT_MODEL
 
-SPLIT_FILE = "indicvoices_tamil_split_full.json"
+SPLIT_FILE = config.SPLIT_FILE
 
-TARGET_SR = 16000
+# Which split's speakers to extract features for.
+#
+#   "train"      -> K-means training features
+#                   (chunks go to tamil_kmeans_chunks)
+#   "validation" -> held-out features
+#                   (chunks go to tamil_kmeans_chunks_validation)
+#   "test"       -> held-out features
+#                   (chunks go to tamil_kmeans_chunks_test)
+SPLIT_NAME = "train"
 
-# Process entire training split
+TARGET_SR = config.TARGET_SR
+
+# Limit the number of utterances processed in one run.
+# None = process the entire split.
+#
+# NOTE: the full train split is ~336k utterances. At 50 frames x
+# 768 floats each, that is roughly 50 GB of chunk files. K-means
+# with 1000 clusters does not need that many frames; a cap of
+# 100,000 - 150,000 utterances is usually plenty.
 MAX_UTTERANCES = None
 
-# Normal GPU batch size
+# Normal GPU batch size (an 8 GB GPU is fine with fp16 autocast;
+# the OOM handler below halves the batch automatically if needed)
 BATCH_SIZE = 8
 
 # Maximum number of frames sampled from each utterance
-FRAMES_PER_UTTERANCE = 50
+FRAMES_PER_UTTERANCE = config.FRAMES_PER_UTTERANCE
 
 # Layer used for K-means features
-HIDDEN_LAYER = 11
+HIDDEN_LAYER = config.HIDDEN_LAYER
 
-SEED = 42
+# Also merge all chunks into one huge .npy file at the end.
+# train_kmeans.py reads the chunks directly, so this is normally
+# unnecessary and doubles the disk usage.
+COMBINE_CHUNKS = False
+
+SEED = config.SEED
 
 
 # ============================================================
 # RESUME CONFIGURATION
 # ============================================================
 
-# You already successfully completed 3 chunks:
+# To resume an interrupted run, set both values below:
 #
-# chunk 1 -> utterances 0-4999
-# chunk 2 -> utterances 5000-9999
-# chunk 3 -> utterances 10000-14999
+#   RESUME_FROM_UTTERANCE -> number of utterances (of this split)
+#                            already processed
+#   START_CHUNK_NUMBER    -> number of the next chunk file to write
 #
-# Therefore resume from 15,000.
+# Example: if chunks 0, 1 and 2 were saved with 1000 utterances
+# each, use RESUME_FROM_UTTERANCE = 3000 and START_CHUNK_NUMBER = 3.
+#
+# For a fresh run keep both at 0. Existing chunk files are never
+# overwritten; the script stops with an error instead.
 
-RESUME_FROM_UTTERANCE =  0
+RESUME_FROM_UTTERANCE = 0
 
-# Existing chunks must NOT be overwritten.
 START_CHUNK_NUMBER = 0
 
-# From now on save more frequently.
+# Utterances per saved chunk file
 CHUNK_UTTERANCES = 1000
 
 
@@ -65,9 +97,12 @@ CHUNK_UTTERANCES = 1000
 # OUTPUT
 # ============================================================
 
-CHUNK_DIR = "tamil_kmeans_chunks_test"
+CHUNK_DIR = config.chunk_dir(SPLIT_NAME)
 
-OUTPUT_FILE = "tamil_kmeans_features_full.npy"
+OUTPUT_FILE = (
+    config.PROJECT_ROOT
+    / f"tamil_kmeans_features_{SPLIT_NAME}.npy"
+)
 
 
 # ============================================================
@@ -227,14 +262,26 @@ with open(
     splits = json.load(f)
 
 
-train_speakers = {
+if SPLIT_NAME not in splits:
+
+    raise KeyError(
+        f"Split '{SPLIT_NAME}' not found in {SPLIT_FILE}. "
+        f"Available: {list(splits.keys())}"
+    )
+
+
+split_speakers = {
     item["speaker_id"]
-    for item in splits["test"]
+    for item in splits[SPLIT_NAME]
 }
 
 print(
-    "Train speakers:",
-    len(train_speakers)
+    f"Split: {SPLIT_NAME}"
+)
+
+print(
+    "Speakers in this split:",
+    len(split_speakers)
 )
 
 
@@ -837,8 +884,8 @@ for row in ds:
     )
 
 
-    # Ignore validation/test speakers
-    if speaker_id not in train_speakers:
+    # Ignore speakers that belong to other splits
+    if speaker_id not in split_speakers:
         continue
 
 
@@ -1253,8 +1300,17 @@ print(
 
 
 # ============================================================
-# CREATE FINAL MEMORY-MAPPED ARRAY
+# OPTIONAL: COMBINE CHUNKS INTO ONE FILE
 # ============================================================
+
+if not COMBINE_CHUNKS:
+
+    print(
+        "\nCOMBINE_CHUNKS is False: not creating a combined "
+        "feature file. train_kmeans.py reads the chunks directly."
+    )
+
+    sys.exit(0)
 
 print("\n" + "=" * 70)
 print("CREATING FINAL FEATURE MATRIX")

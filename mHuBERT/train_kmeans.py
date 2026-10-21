@@ -4,6 +4,13 @@ import json
 import numpy as np
 import joblib
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import config
+
 from sklearn.cluster import MiniBatchKMeans
 
 
@@ -11,16 +18,23 @@ from sklearn.cluster import MiniBatchKMeans
 # CONFIG
 # ============================================================
 
-CHUNK_DIR = "tamil_kmeans_chunks"
+CHUNK_DIR = config.chunk_dir("train")
 
-OUTPUT_MODEL = "tamil_kmeans.joblib"
+OUTPUT_MODEL = config.KMEANS_MODEL
 
-CHECKPOINT_MODEL = "tamil_kmeans_checkpoint.joblib"
-CHECKPOINT_STATE = "tamil_kmeans_checkpoint_state.json"
+CHECKPOINT_MODEL = (
+    config.MODEL_DIR / "tamil_kmeans_checkpoint.joblib"
+)
 
-N_CLUSTERS = 1000
+CHECKPOINT_STATE = (
+    config.MODEL_DIR / "tamil_kmeans_checkpoint_state.json"
+)
+
+config.MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+N_CLUSTERS = config.N_CLUSTERS
 BATCH_SIZE = 4096
-SEED = 42
+SEED = config.SEED
 
 
 # ============================================================

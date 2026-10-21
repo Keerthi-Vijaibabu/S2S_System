@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import joblib
@@ -8,21 +9,15 @@ import numpy as np
 # CONFIGURATION
 # ============================================================
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-INPUT_DIR = PROJECT_ROOT / "tamil_kmeans_chunks"
+import config
 
-KMEANS_MODEL = (
-    PROJECT_ROOT
-    / "pretrained_models"
-    / "tamil_kmeans.joblib"
-)
+INPUT_DIR = config.chunk_dir("train")
 
-OUTPUT_DIR = (
-    PROJECT_ROOT
-    / "mHuBERT"
-    / "tamil_kmeans_units"
-)
+KMEANS_MODEL = config.KMEANS_MODEL
+
+OUTPUT_DIR = config.UNITS_DIR
 
 # Process this many feature vectors at a time.
 # Useful if an individual .npy chunk is very large.
