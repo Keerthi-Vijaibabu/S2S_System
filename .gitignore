@@ -12,3 +12,18 @@ pretrained_models/
 tamil_kmeans_chunks/
 tamil_kmeans_chunks_test/
 tamil_full_units/tamil_full_units.zip
+
+#Python
+__pycache__/
+*.pyc
+
+# Large datasets and archives
+*.zip
+*.npy
+*.npz
+
+# Machine learning models
+*.pt
+*.pth
+*.ckpt
+*.joblib
