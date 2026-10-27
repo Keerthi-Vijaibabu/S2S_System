@@ -27,3 +27,7 @@ __pycache__/
 *.pth
 *.ckpt
 *.joblib
+
+tamil_english_s2st/
+
+tamil_full_units/
